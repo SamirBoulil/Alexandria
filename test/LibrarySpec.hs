@@ -7,8 +7,8 @@ import Numeric.Natural
 
 spec :: Spec
 spec = describe "Manage the Akeneo Library" $ do
-    let refactoring = Book "ref-1234" "Refactoring" "Martin Fowler" [Ebook]
-    let xpExplained = Book "ref-456" "XP Explained" "Kent Beck" [Paper 4]
+    let refactoring = Book "ref-1234" "Refactoring" "Martin Fowler" []
+    let xpExplained = Book "ref-456" "XP Explained" "Kent Beck" []
 
     it "Does not have any books" $
       books (Library []) `shouldBe` []
@@ -25,9 +25,10 @@ spec = describe "Manage the Akeneo Library" $ do
       let library = Library [xpExplained]
       referenceBook xpExplained library `shouldBe` library
 
-    -- it "can have multiple copies of the same book" $ do
-    --   let library = Library [(xpExplained, 1)]
-    --   referenceBook xpExplained library `shouldBe` (Library [(xpExplained, 2)])
+    it "can add a new available ebook copy for a book" $ do
+      let library = Library [xpExplained]
+      let ebookXpEplained = (Book "ref-456" "XP Explained" "Kent Beck" [Ebook])
+      addAvailableCopy xpExplained Ebook library `shouldBe` (Library [ebookXpEplained])
 
 
 -- referenceBook :: Book -> Library -> Library
@@ -54,5 +55,8 @@ referenceBook newBook library = case maybeABook of Nothing -> library { books = 
                                                    _       -> library
                                 where maybeABook = findBook newBook library
 
+addAvailableCopy :: Book -> Copy -> Library -> Library
+addAvailableCopy book copy library = Library $ map (\b -> if b == book then book { copies = copy:(copies book)} else b) (books library)
+            
 findBook :: Book -> Library -> Maybe Book
 findBook bookToFind library = find (== bookToFind) (books library) 
