@@ -5,41 +5,40 @@ import Test.Hspec
 import Data.List
 import Numeric.Natural
 
-refactoring = Book "ref-1234" "Refactoring" "Martin Fowler" [Ebook]
-xpExplained = Book "ref-456" "XP Explained" "Kent Beck" [Paper 4]
-
-main :: IO ()
-main = putStrLn "Test suite not yet implemented"
-
 spec :: Spec
-spec = describe "Manage the Akeneo Library"$ do
+spec = describe "Manage the Akeneo Library" $ do
+    let refactoring = Book "ref-1234" "Refactoring" "Martin Fowler" [Ebook]
+    let xpExplained = Book "ref-456" "XP Explained" "Kent Beck" [Paper 4]
+
     it "Does not have any books" $
       books (Library []) `shouldBe` []
 
     it "references books" $
       books (Library [refactoring, xpExplained]) `shouldBe` [refactoring, xpExplained]
 
-    -- it "references a new book to an existing library" $
-    --   let library = Library [xpExplained]
-    --   in referenceBook refactoring library `shouldBe` (Library [refactoring, xpExplained])
+    it "references a new book to an existing library" $ do
+      let library = Library [xpExplained]
+      referenceBook refactoring library `shouldBe` (Library [refactoring, xpExplained])
 
-    -- it "can have multiple copies of the same book" $
+
+    it "does not references an existing book twice" $ do
+      let library = Library [xpExplained]
+      referenceBook xpExplained library `shouldBe` library
+
+    -- it "can have multiple copies of the same book" $ do
     --   let library = Library [(xpExplained, 1)]
-    --   in referenceBook xpExplained library `shouldBe` (Library [(xpExplained, 2)])
+    --   referenceBook xpExplained library `shouldBe` (Library [(xpExplained, 2)])
 
-{-TODO
- -
- - Add UUID identifier for a book
- - Library [Book]
- -
- - OR
- - Book <- *
- - Copy / Exemplaire
- - type: (pdf ou livre)
- - Number of copies
- -
- - -}
 
+-- referenceBook :: Book -> Library -> Library
+-- referenceBook newBook library = case maybeABook of Nothing -> addNewBook newBook library
+--                                                    _       -> updateCopies newBook library
+--                                 where maybeABook = findBook newBook library
+
+
+
+-- addNewBook :: Book -> Library -> Library
+-- addNewBook bookToAdd library = library { books = bookToAdd:(books library) }
 
 type ISBN = String
 type Title = String
@@ -50,13 +49,10 @@ data Copy = Ebook
 data Book = Book { isbn :: ISBN, title :: Title, author :: Author, copies :: [Copy] } deriving (Show, Eq)
 data Library = Library { books :: [Book] } deriving (Show, Eq)
 
--- referenceBook :: Book -> Library -> Library
--- referenceBook newBook library = case maybeABook of Nothing -> addNewBook newBook library
---                                                    _       -> updateCopies newBook library
---                                 where maybeABook = findBook newBook library
+referenceBook :: Book -> Library -> Library
+referenceBook newBook library = case maybeABook of Nothing -> library { books = newBook:(books library) }
+                                                   _       -> library
+                                where maybeABook = findBook newBook library
 
--- findBook :: Book -> Library -> Maybe Book
--- findBook bookToFind library = find (== bookToFind) (books library)
-
--- addNewBook :: Book -> Library -> Library
--- addNewBook bookToAdd library = library { books = bookToAdd:(books library) }
+findBook :: Book -> Library -> Maybe Book
+findBook bookToFind library = find (== bookToFind) (books library) 

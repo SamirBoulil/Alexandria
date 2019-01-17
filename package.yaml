@@ -46,5 +46,4 @@ tests:
     dependencies:
     - alexandria
     - hspec
-    - uuid
     - hspec-discover
