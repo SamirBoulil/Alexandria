@@ -7,8 +7,8 @@ import Numeric.Natural
 
 spec :: Spec
 spec = describe "Manage the Akeneo Library" $ do
-    let refactoring = Book "ref-1234" "Refactoring" "Martin Fowler" []
-    let xpExplained = Book "ref-456" "XP Explained" "Kent Beck" []
+    let refactoring = Book "ref-1234" "Refactoring" "Martin Fowler" NotAvailable 0
+    let xpExplained = Book "ref-456" "XP Explained" "Kent Beck" NotAvailable 0
 
     it "Does not have any books" $
       books (Library []) `shouldBe` []
@@ -20,43 +20,51 @@ spec = describe "Manage the Akeneo Library" $ do
       let library = Library [xpExplained]
       referenceBook refactoring library `shouldBe` (Library [refactoring, xpExplained])
 
-
     it "does not references an existing book twice" $ do
       let library = Library [xpExplained]
       referenceBook xpExplained library `shouldBe` library
 
-    it "can add a new available ebook copy for a book" $ do
+    it "can add make an ebook version available" $ do
       let library = Library [xpExplained]
-      let ebookXpEplained = (Book "ref-456" "XP Explained" "Kent Beck" [Ebook])
-      addAvailableCopy xpExplained Ebook library `shouldBe` (Library [ebookXpEplained])
+      let expectedBook = (Book "ref-456" "XP Explained" "Kent Beck" Available 0)
+      setEbookAvailability "ref-456" Available library `shouldBe` (Library [expectedBook])
 
+    -- it "cannot add a new available ebook copy twice" $ do
+    --   let ebookXpExplained = (Book "ref-456" "XP Explained" "Kent Beck" [Ebook])
+    --   let library = Library [ebookXpExplained]
+    --   addAvailableCopy xpExplained Ebook library `shouldBe` (Library [ebookXpExplained])
 
--- referenceBook :: Book -> Library -> Library
--- referenceBook newBook library = case maybeABook of Nothing -> addNewBook newBook library
---                                                    _       -> updateCopies newBook library
---                                 where maybeABook = findBook newBook library
-
-
-
--- addNewBook :: Book -> Library -> Library
--- addNewBook bookToAdd library = library { books = bookToAdd:(books library) }
+    -- it "can add a new available paper copy" $ do
+    --   let ebookXpExplained = (Book "ref-456" "XP Explained" "Kent Beck" [Ebook])
+    --   let library = Library [ebookXpExplained]
+    --   let allCopies = (Book "ref-456" "XP Explained" "Kent Beck" [Paper { nbCopy = 1}, Ebook])
+    --   addAvailableCopy xpExplained Paper { nbCopy = 1 } library `shouldBe` (Library [allCopies])
 
 type ISBN = String
 type Title = String
 type Author = String
-data Copy = Ebook
-          | Paper { nbCopy :: Natural }
-    deriving (Show, Eq)
-data Book = Book { isbn :: ISBN, title :: Title, author :: Author, copies :: [Copy] } deriving (Show, Eq)
+type NumberOfPaperCopies = Int
+
+data IsAvailableAsEbook = Available | NotAvailable deriving (Show, Eq)
+
+data Book = Book { isbn :: ISBN, title :: Title, author :: Author, isAvailableAsEbook :: IsAvailableAsEbook, nbPaperCopy :: NumberOfPaperCopies } deriving (Show, Eq)
+
 data Library = Library { books :: [Book] } deriving (Show, Eq)
 
 referenceBook :: Book -> Library -> Library
 referenceBook newBook library = case maybeABook of Nothing -> library { books = newBook:(books library) }
                                                    _       -> library
                                 where maybeABook = findBook newBook library
-
-addAvailableCopy :: Book -> Copy -> Library -> Library
-addAvailableCopy book copy library = Library $ map (\b -> if b == book then book { copies = copy:(copies book)} else b) (books library)
             
 findBook :: Book -> Library -> Maybe Book
 findBook bookToFind library = find (== bookToFind) (books library) 
+
+
+setEbookAvailability :: ISBN -> IsAvailableAsEbook -> Library -> Library
+setEbookAvailability bookIsbn isAvailable library = Library $
+                                                map (\b -> 
+                                                  if bookIsbn == isbn b
+                                                    then b { isAvailableAsEbook = isAvailable }
+                                                    else b
+                                                  )
+                                                  (books library)
